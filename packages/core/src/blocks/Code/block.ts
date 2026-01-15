@@ -111,6 +111,7 @@ export const createCodeBlockSpec = createBlockSpec(
       const wrapper = document.createDocumentFragment();
       const pre = document.createElement("pre");
       const code = document.createElement("code");
+      let removeCopyListener = undefined;
       pre.appendChild(code);
 
       let removeSelectChangeListener = undefined;
@@ -147,11 +148,53 @@ export const createCodeBlockSpec = createBlockSpec(
       }
       wrapper.appendChild(pre);
 
+      const copyWrapper = document.createElement("div");
+      copyWrapper.contentEditable = "false";
+
+      const copyButton = document.createElement("button");
+      copyButton.type = "button";
+      copyButton.className = "bn-code-copy-button";
+      copyButton.innerText = "copy";
+
+      const handleCopy = async ()=>{
+        const text = code.textContent ?? "";
+
+        try{
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            await navigator.clipboard.writeText(text);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "absolute";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          }
+          const prev = copyButton.innerText;
+          copyButton.innerText = "copied";
+          setTimeout(()=>{
+            copyButton.innerText = prev;
+          },1500);
+        } catch (e){
+          // 
+        }
+      };
+
+      copyButton.addEventListener("click", handleCopy);
+      removeCopyListener = () => copyButton.removeEventListener("click", handleCopy);
+
+      copyWrapper.appendChild(copyButton);
+      wrapper.appendChild(copyWrapper);
+      wrapper.appendChild(pre);
+
       return {
         dom: wrapper,
         contentDOM: code,
         destroy: () => {
           removeSelectChangeListener?.();
+          removeCopyListener?.();
         },
       };
     },
