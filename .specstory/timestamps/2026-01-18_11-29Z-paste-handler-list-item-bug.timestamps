@@ -1,0 +1,6 @@
+2026-01-18T12:24:53Z|we have an bug within the core.
+2026-01-18T12:24:53Z|Exploring the codebase to understand the structure, pasteHandler implementation, and list item handling. Then drafting a plan to fix the bug.
+2026-01-18T12:24:53Z|Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+2026-01-18T12:24:53Z|Implementing the fix. Reviewing the current implementation, then adding the special case for empty list items.
+2026-01-18T12:24:53Z|Summary
+2026-01-18T12:24:53Z|Gathering information for the PR summary. Reviewing the changes and project structure.
