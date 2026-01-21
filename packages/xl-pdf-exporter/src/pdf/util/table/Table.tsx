@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    // flexWrap: "wrap",
     // width: "100%",
     // justifyContent: "space-between",
     display: "flex",
@@ -59,7 +59,7 @@ export const Table = (props: {
   const headerCols = new Array(props.data.headerCols ?? 0).fill(true);
 
   return (
-    <View style={styles.tableContainer} wrap={false}>
+    <View style={styles.tableContainer}>
       {props.data.rows.map((row, rowIndex) => (
         <View
           style={[
@@ -82,7 +82,12 @@ export const Table = (props: {
                   isHeaderRow || isHeaderCol ? styles.headerCell : {},
                   colIndex === row.cells.length - 1 ? styles.rightCell : {},
                   props.data.columnWidths[colIndex]
-                    ? { width: props.data.columnWidths[colIndex] }
+                    ? {
+                        width:
+                          props.data.columnWidths[colIndex] * PIXELS_PER_POINT,
+                        flexGrow: 0,
+                        flexShrink: 0,
+                      }
                     : { flex: 1 },
                   {
                     color:
