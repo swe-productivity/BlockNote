@@ -63,7 +63,7 @@ export const FilePanel = <
 
   return (
     <Components.FilePanel.Root
-      className={"bn-panel"}
+      className={"bn-panel bn-add-file-panel"}
       defaultOpenTab={openTab}
       openTab={openTab}
       setOpenTab={setOpenTab}
