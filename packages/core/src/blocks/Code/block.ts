@@ -111,10 +111,10 @@ export const createCodeBlockSpec = createBlockSpec(
       const wrapper = document.createDocumentFragment();
       const pre = document.createElement("pre");
       const code = document.createElement("code");
-      let removeCopyListener = undefined;
       pre.appendChild(code);
 
       let removeSelectChangeListener = undefined;
+      let removeCopyListener: (() => void) | undefined;
 
       if (options.supportedLanguages) {
         const select = document.createElement("select");
@@ -142,48 +142,44 @@ export const createCodeBlockSpec = createBlockSpec(
 
         const selectWrapper = document.createElement("div");
         selectWrapper.contentEditable = "false";
-
         selectWrapper.appendChild(select);
         wrapper.appendChild(selectWrapper);
       }
-      wrapper.appendChild(pre);
-
+    
       const copyWrapper = document.createElement("div");
+      copyWrapper.className = "bn-code-copy-wrapper";
       copyWrapper.contentEditable = "false";
 
       const copyButton = document.createElement("button");
       copyButton.type = "button";
       copyButton.className = "bn-code-copy-button";
-      copyButton.innerText = "copy";
+      copyButton.setAttribute(
+        "aria-label",
+        editor.dictionary.code_blocks?.copy_button || "Copy",
+      );
+      copyButton.innerText = 
+        editor.dictionary.code_blocks?.copy_button || "Copy";
 
       const handleCopy = async ()=>{
         const text = code.textContent ?? "";
+        if (!text.trim()) {
+          return;
+        }
 
         try{
-          if(navigator.clipboard && navigator.clipboard.writeText){
             await navigator.clipboard.writeText(text);
-          } else {
-            const ta = document.createElement("textarea");
-            ta.value = text;
-            ta.style.position = "absolute";
-            ta.style.left = "-9999px";
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand("copy");
-            document.body.removeChild(ta);
-          }
-          const prev = copyButton.innerText;
-          copyButton.innerText = "copied";
-          setTimeout(()=>{
-            copyButton.innerText = prev;
-          },1500);
-        } catch (e){
-          // 
+            copyButton.classList.add("bn-code-copy-button-copied");
+            setTimeout(() => {
+              copyButton.classList.remove("bn-code-copy-button-copied");
+            }, 1500);
+        }catch(e){
+            console.error("Failed to copy text to clipboard", e);
         }
       };
 
       copyButton.addEventListener("click", handleCopy);
-      removeCopyListener = () => copyButton.removeEventListener("click", handleCopy);
+      removeCopyListener = () => 
+        copyButton.removeEventListener("click", handleCopy);
 
       copyWrapper.appendChild(copyButton);
       wrapper.appendChild(copyWrapper);
