@@ -114,7 +114,6 @@ export const createCodeBlockSpec = createBlockSpec(
       pre.appendChild(code);
 
       let removeSelectChangeListener = undefined;
-      let removeCopyListener: (() => void) | undefined;
 
       if (options.supportedLanguages) {
         const select = document.createElement("select");
@@ -145,7 +144,7 @@ export const createCodeBlockSpec = createBlockSpec(
         selectWrapper.appendChild(select);
         wrapper.appendChild(selectWrapper);
       }
-    
+
       const copyWrapper = document.createElement("div");
       copyWrapper.className = "bn-code-copy-wrapper";
       copyWrapper.contentEditable = "false";
@@ -157,29 +156,27 @@ export const createCodeBlockSpec = createBlockSpec(
         "aria-label",
         editor.dictionary.code_blocks?.copy_button || "Copy",
       );
-      copyButton.innerText = 
+      copyButton.innerText =
         editor.dictionary.code_blocks?.copy_button || "Copy";
 
-      const handleCopy = async ()=>{
+      const handleCopy = async () => {
         const text = code.textContent ?? "";
         if (!text.trim()) {
           return;
         }
 
-        try{
-            await navigator.clipboard.writeText(text);
-            copyButton.classList.add("bn-code-copy-button-copied");
-            setTimeout(() => {
-              copyButton.classList.remove("bn-code-copy-button-copied");
-            }, 1500);
-        }catch(e){
-            console.error("Failed to copy text to clipboard", e);
+        try {
+          await navigator.clipboard.writeText(text);
+          copyButton.classList.add("bn-code-copy-button-copied");
+          setTimeout(() => {
+            copyButton.classList.remove("bn-code-copy-button-copied");
+          }, 1500);
+        } catch {
+          // Silently fail if clipboard is unavailable.
         }
       };
 
       copyButton.addEventListener("click", handleCopy);
-      removeCopyListener = () => 
-        copyButton.removeEventListener("click", handleCopy);
 
       copyWrapper.appendChild(copyButton);
       wrapper.appendChild(copyWrapper);
@@ -190,7 +187,7 @@ export const createCodeBlockSpec = createBlockSpec(
         contentDOM: code,
         destroy: () => {
           removeSelectChangeListener?.();
-          removeCopyListener?.();
+          copyButton.removeEventListener("click", handleCopy);
         },
       };
     },
