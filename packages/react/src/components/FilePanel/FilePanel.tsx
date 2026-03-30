@@ -4,9 +4,10 @@ import {
   DefaultInlineContentSchema,
   DefaultStyleSchema,
   InlineContentSchema,
+  PartialBlock,
   StyleSchema,
 } from "@blocknote/core";
-import { useState } from "react";
+import { DragEvent, useCallback, useState } from "react";
 
 import {
   ComponentProps,
@@ -40,6 +41,43 @@ export const FilePanel = <
 
   const [loading, setLoading] = useState<boolean>(false);
 
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const file = e.dataTransfer.files?.[0];
+      if (!file || !editor.uploadFile) {
+        return;
+      }
+
+      (async () => {
+        setLoading(true);
+        try {
+          let updateData = await editor.uploadFile!(file, props.blockId);
+          if (typeof updateData === "string") {
+            updateData = {
+              props: {
+                name: file.name,
+                url: updateData,
+              },
+            } as PartialBlock<B, I, S>;
+          }
+          editor.updateBlock(props.blockId, updateData);
+        } catch {
+          // Leave panel open so the user can retry.
+        } finally {
+          setLoading(false);
+        }
+      })();
+    },
+    [editor, props.blockId],
+  );
+
   const tabs: PanelProps["tabs"] = props.tabs ?? [
     ...(editor.uploadFile !== undefined
       ? [
@@ -62,13 +100,15 @@ export const FilePanel = <
   );
 
   return (
-    <Components.FilePanel.Root
-      className={"bn-panel bn-add-file-panel"}
-      defaultOpenTab={openTab}
-      openTab={openTab}
-      setOpenTab={setOpenTab}
-      tabs={tabs}
-      loading={loading}
-    />
+    <div onDragOver={handleDragOver} onDrop={handleDrop}>
+      <Components.FilePanel.Root
+        className={"bn-panel bn-add-file-panel"}
+        defaultOpenTab={openTab}
+        openTab={openTab}
+        setOpenTab={setOpenTab}
+        tabs={tabs}
+        loading={loading}
+      />
+    </div>
   );
 };

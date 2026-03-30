@@ -2,6 +2,7 @@ import { Extension } from "@tiptap/core";
 import { Plugin } from "prosemirror-state";
 
 import type { BlockNoteEditor } from "../../../editor/BlockNoteEditor.js";
+import { FilePanelExtension } from "../../../extensions/FilePanel/FilePanel.js";
 import {
   BlockSchema,
   InlineContentSchema,
@@ -41,9 +42,11 @@ export const createDropFileExtension = <
                 }
 
                 if (format === "Files") {
-                  const target = event.target as HTMLElement;
-                  if (target.closest(".bn-add-file-panel")) {
-                    handleFileInsertion(event, editor);
+                  // If the file panel is open, its React drop handler
+                  // manages the upload — don't insert a duplicate block.
+                  if (
+                    editor.getExtension(FilePanelExtension)?.store.state
+                  ) {
                     return true;
                   }
 

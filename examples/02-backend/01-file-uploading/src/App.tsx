@@ -3,19 +3,9 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 
-// Uploads a file to tmpfiles.org and returns the URL to the uploaded file.
+// Creates a local blob URL for the file (for testing without an upload server).
 async function uploadFile(file: File) {
-  const body = new FormData();
-  body.append("file", file);
-
-  const ret = await fetch("https://tmpfiles.org/api/v1/upload", {
-    method: "POST",
-    body: body,
-  });
-  return (await ret.json()).data.url.replace(
-    "tmpfiles.org/",
-    "tmpfiles.org/dl/",
-  );
+  return URL.createObjectURL(file);
 }
 
 export default function App() {
