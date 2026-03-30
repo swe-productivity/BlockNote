@@ -44,6 +44,31 @@ function defaultPasteHandler({
     }
   }
 
+  // Special case for empty list items with inline content. When pasting into
+  // an empty list item, using the default paste handler (which uses pasteHTML
+  // or pasteMarkdown) can cause the list item to be replaced with a paragraph.
+  // By using pasteText instead, we preserve the list item structure.
+  const currentBlock = editor.getTextCursorPosition().block;
+  const blockSpec = editor.schema.blockSchema[currentBlock.type];
+
+  const hasInlineContent = blockSpec?.content === "inline";
+  const isEmpty =
+    !currentBlock.content ||
+    (Array.isArray(currentBlock.content) && currentBlock.content.length === 0);
+  const isListItem =
+    currentBlock.type === "bulletListItem" ||
+    currentBlock.type === "numberedListItem" ||
+    currentBlock.type === "checkListItem" ||
+    currentBlock.type === "toggleListItem";
+
+  if (hasInlineContent && isEmpty && isListItem) {
+    const plainText = event.clipboardData?.getData("text/plain");
+    if (plainText) {
+      editor.pasteText(plainText);
+      return true;
+    }
+  }
+
   let format: (typeof acceptedMIMETypes)[number] | undefined;
   for (const mimeType of acceptedMIMETypes) {
     if (event.clipboardData!.types.includes(mimeType)) {
