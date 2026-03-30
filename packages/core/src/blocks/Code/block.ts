@@ -141,11 +141,9 @@ export const createCodeBlockSpec = createBlockSpec(
 
         const selectWrapper = document.createElement("div");
         selectWrapper.contentEditable = "false";
-
         selectWrapper.appendChild(select);
         wrapper.appendChild(selectWrapper);
       }
-      wrapper.appendChild(pre);
 
       return {
         dom: wrapper,
