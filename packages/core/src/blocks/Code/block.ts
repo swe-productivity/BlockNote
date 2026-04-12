@@ -145,11 +145,49 @@ export const createCodeBlockSpec = createBlockSpec(
         wrapper.appendChild(selectWrapper);
       }
 
+      const copyWrapper = document.createElement("div");
+      copyWrapper.className = "bn-code-copy-wrapper";
+      copyWrapper.contentEditable = "false";
+
+      const copyButton = document.createElement("button");
+      copyButton.type = "button";
+      copyButton.className = "bn-code-copy-button";
+      copyButton.setAttribute(
+        "aria-label",
+        editor.dictionary.code_blocks?.copy_button || "Copy",
+      );
+      copyButton.innerText =
+        editor.dictionary.code_blocks?.copy_button || "Copy";
+
+      const handleCopy = async () => {
+        const text = code.textContent ?? "";
+        if (!text.trim()) {
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(text);
+          copyButton.classList.add("bn-code-copy-button-copied");
+          setTimeout(() => {
+            copyButton.classList.remove("bn-code-copy-button-copied");
+          }, 1500);
+        } catch {
+          // Silently fail if clipboard is unavailable.
+        }
+      };
+
+      copyButton.addEventListener("click", handleCopy);
+
+      copyWrapper.appendChild(copyButton);
+      wrapper.appendChild(copyWrapper);
+      wrapper.appendChild(pre);
+
       return {
         dom: wrapper,
         contentDOM: code,
         destroy: () => {
           removeSelectChangeListener?.();
+          copyButton.removeEventListener("click", handleCopy);
         },
       };
     },
