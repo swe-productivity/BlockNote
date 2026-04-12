@@ -1,4 +1,5 @@
 import { Extension } from "@tiptap/core";
+import { DOMParser as PMDOMParser, Fragment } from "prosemirror-model";
 import { Plugin } from "prosemirror-state";
 
 import type {
@@ -44,24 +45,47 @@ function defaultPasteHandler({
     }
   }
 
-  // Special case for empty list items with inline content. When pasting into
-  // an empty list item, using the default paste handler (which uses pasteHTML
-  // or pasteMarkdown) can cause the list item to be replaced with a paragraph.
-  // By using pasteText instead, we preserve the list item structure.
-  const currentBlock = editor.getTextCursorPosition().block;
-  const blockSpec = editor.schema.blockSchema[currentBlock.type];
+  // Special case: when pasting into an empty non-paragraph inline textblock
+  // (e.g. a list item or heading), the default paste handler can replace the
+  // block type with paragraph. Instead, extract only the inline content from
+  // the clipboard HTML so formatting (bold, italic, etc.) is preserved while
+  // the current block type is kept intact.
+  const isInEmptyNonParagraphBlock = editor.transact((tr) => {
+    const parent = tr.selection.$from.parent;
+    return (
+      parent.isTextblock &&
+      !parent.type.spec.code &&
+      !parent.childCount &&
+      parent.type.name !== "paragraph"
+    );
+  });
 
-  const hasInlineContent = blockSpec?.content === "inline";
-  const isEmpty =
-    !currentBlock.content ||
-    (Array.isArray(currentBlock.content) && currentBlock.content.length === 0);
-  const isListItem =
-    currentBlock.type === "bulletListItem" ||
-    currentBlock.type === "numberedListItem" ||
-    currentBlock.type === "checkListItem" ||
-    currentBlock.type === "toggleListItem";
+  if (isInEmptyNonParagraphBlock) {
+    const htmlData = event.clipboardData?.getData("text/html");
+    if (htmlData) {
+      const view = editor.prosemirrorView!;
+      const parser = PMDOMParser.fromSchema(view.state.schema);
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = htmlData;
+      const parsedDoc = parser.parse(tempDiv);
 
-  if (hasInlineContent && isEmpty && isListItem) {
+      let inlineContent: Fragment | null = null;
+      parsedDoc.descendants((node) => {
+        if (!inlineContent && node.isTextblock) {
+          inlineContent = node.content;
+          return false;
+        }
+        return true;
+      });
+
+      if (inlineContent && (inlineContent as Fragment).size > 0) {
+        editor.transact((tr) => {
+          tr.insert(tr.selection.from, inlineContent!);
+        });
+        return true;
+      }
+    }
+
     const plainText = event.clipboardData?.getData("text/plain");
     if (plainText) {
       editor.pasteText(plainText);
